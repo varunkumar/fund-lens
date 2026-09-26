@@ -18,13 +18,19 @@ rendered DOM. Decrypting CAMS session storage is explicitly out of scope.
 ## Scope
 
 - Output row: `Source | Fund Name | Invested Amount | Current Value`.
-- Popup shows both sources' rows, per-source totals and a combined total, plus
-  last-synced time per source.
+- Popup and a full-page dashboard (opened from the popup) share one renderer:
+  both sources' rows, per-source totals, a combined total, gain/loss, share of
+  portfolio, click-to-sort columns, and last-synced time per source.
+- Storage keeps only the latest extraction per source (each sync overwrites;
+  no history). Entries expire 1 hour after `syncedAt`: expired data is never
+  shown, is removed on read, and is purged by a 5-minute `chrome.alarms` job.
+  A "Clear data" button removes everything immediately.
 - No dedupe: the user confirmed the sources do not overlap. Rows are listed per
   source with a source label.
 - No credentials are read or stored. No network requests from the extension.
   Data lives only in `chrome.storage.local`.
-- Permissions: `storage`, `activeTab`, host access to the two origins.
+- Permissions: `storage`, `alarms`. Content scripts are matched to the two
+  origins; no host permissions, no `tabs`, no `activeTab`.
 
 ## Architecture
 
@@ -36,9 +42,15 @@ src/
   adapters/kfintech.js   DOM -> raw rows
   adapters/cams.js       clicks each AMC tab, DOM -> raw rows
   core/parse.js          "₹9,99,999.50" / "-1,234.5 (-3%)" -> number
-  core/store.js          per-source rows + syncedAt in chrome.storage.local
-  content.js             picks adapter by hostname, answers "sync" message
-  popup/popup.html|js    Sync button, table, totals
+  core/sources.js        source ids, labels, hostname -> source
+  core/store.js          latest rows + syncedAt per source, 1h TTL, purge
+  core/summary.js        stored entries -> view model (totals, gain, share)
+  content.js             loader (dynamic import of content-main.js)
+  content-main.js        picks adapter by hostname, syncs, saves to store
+  background.js          alarm that purges expired entries
+  ui/render.js|styles.css shared renderer for popup and dashboard
+  popup/popup.html|js    Sync button, compact view, open dashboard, clear
+  dashboard/dashboard.html|js  full-page view
 test/                    node:test unit tests and adapter fixture tests
 ```
 
@@ -50,8 +62,10 @@ only writer of storage. The popup reads storage and sends the sync message.
 
 1. User opens a portfolio page and clicks **Sync this site**.
 2. Popup messages the content script in that tab.
-3. Content script runs the matching adapter and returns rows (or an error).
-4. Popup saves `{ source, rows, syncedAt }` via `store.js` and re-renders.
+3. Content script runs the matching adapter and saves the result via
+   `store.js` itself (so a popup closing mid-sync loses nothing), then replies
+   with a status.
+4. Popup and dashboard re-render from `chrome.storage.onChanged`.
 
 ## Adapter notes
 
