@@ -18,7 +18,7 @@ A Chrome extension (Manifest V3) that combines your myCAMS and KFintech portfoli
 - On a portfolio page click the extension icon, then "Sync this site". On myCAMS open the dashboard AMC list first; the extension clicks through each AMC tab and restores your selection.
 - The toolbar icon is greyed out on every site except myCAMS and KFintech.
 - "Dashboard" opens the full-page view with charts (allocation, source split, invested vs current, gain by fund), gain, share of portfolio and sortable columns.
-- Export from the dashboard: "Copy for Google Sheets" copies a tab-separated table (`Source, Fund Name, Invested Amount, Current Value`, plain numbers) that pastes straight into cells. "Download CSV" saves the same rows as a file.
+- Export from the dashboard: "Copy" copies a tab-separated table (`Source, Fund Name, Invested Amount, Current Value`, plain numbers) that pastes straight into cells. "Download CSV" saves the same rows as a file.
 
 ## Known limitations
 - Do not click around on the page or switch tabs while a myCAMS sync runs (background tabs throttle timers).
