@@ -2,6 +2,7 @@ import { createStore } from '../core/store.js';
 import { buildView } from '../core/summary.js';
 import { renderPortfolio } from '../ui/render.js';
 import { createExpiryRefresher } from '../ui/expiry.js';
+import { confirmClick } from '../ui/confirm.js';
 
 const store = createStore();
 const root = document.getElementById('root');
@@ -34,10 +35,11 @@ syncBtn.addEventListener('click', async () => {
     syncBtn.disabled = false;
   }
 });
-document.getElementById('dash').addEventListener('click', () => {
+document.getElementById('dash').addEventListener('click', (e) => {
+  e.preventDefault();
   chrome.tabs.create({ url: chrome.runtime.getURL('src/dashboard/dashboard.html') });
 });
-document.getElementById('clear').addEventListener('click', async () => {
+confirmClick(document.getElementById('clear'), async () => {
   await store.clear();
   status.textContent = 'Cleared.';
 });

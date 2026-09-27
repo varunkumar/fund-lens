@@ -1,14 +1,29 @@
 import { createStore } from './core/store.js';
+import { supportedPageConditions } from './core/page-rules.js';
 
 const ALARM = 'fund-lens-purge';
 const store = createStore();
 const purge = () => store.purgeExpired().catch(() => {});
 
+// The toolbar icon is greyed out everywhere except the supported portfolio sites.
+function ensureActionRules() {
+  chrome.action.disable();
+  chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
+    chrome.declarativeContent.onPageChanged.addRules([{
+      conditions: supportedPageConditions().map((c) => new chrome.declarativeContent.PageStateMatcher(c)),
+      actions: [new chrome.declarativeContent.ShowAction()],
+    }]);
+  });
+}
+
 function ensureAlarm() {
   chrome.alarms.create(ALARM, { periodInMinutes: 5 });
 }
 
-chrome.runtime.onInstalled.addListener(ensureAlarm);
+chrome.runtime.onInstalled.addListener(() => {
+  ensureAlarm();
+  ensureActionRules();
+});
 chrome.runtime.onStartup.addListener(() => {
   ensureAlarm();
   purge();

@@ -7,8 +7,14 @@
   <link rel="stylesheet" href="../ui/styles.css">
 </head>
 <body class="dashboard">
-  <h1>Fund Lens</h1>
-  <div class="bar"><button id="clear">Clear data</button></div>
+  <header class="brand"><img src="../../icons/icon-48.png" alt="" width="36" height="36"><h1>Fund Lens</h1></header>
+  <div class="bar">
+    <button id="copy" class="btn primary">Copy for Google Sheets</button>
+    <button id="csv" class="btn">Download CSV</button>
+    <button id="clear" class="link danger">Clear data</button>
+    <span id="status" role="status"></span>
+  </div>
+  <div id="charts"></div>
   <div id="root"></div>
   <script type="module" src="dashboard.js"></script>
 </body>

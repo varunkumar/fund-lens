@@ -1,10 +1,13 @@
 # Fund Lens
 
-Chrome extension (Manifest V3) that combines your myCAMS and KFintech mutual fund portfolios.
+One clear view of all your mutual funds. Private, and stored only in your browser.
+
+A Chrome extension (Manifest V3) that combines your myCAMS and KFintech portfolios.
 
 ## Privacy
 - Reads only the page you are already logged in to. Never asks for or stores credentials.
-- Makes no network requests. Data lives only in `chrome.storage.local`.
+- Makes no network requests. Permissions: `storage`, `alarms` (expiry cleanup) and `declarativeContent` (enables the toolbar icon only on myCAMS and KFintech; it reads no page content).
+- Data lives only in `chrome.storage.local`.
 - Keeps only the latest sync per site and deletes it 1 hour after it was taken.
 
 ## Install
@@ -13,7 +16,9 @@ Chrome extension (Manifest V3) that combines your myCAMS and KFintech mutual fun
 
 ## Use
 - On a portfolio page click the extension icon, then "Sync this site". On myCAMS open the dashboard AMC list first; the extension clicks through each AMC tab and restores your selection.
-- "Dashboard" opens the full-page view with gain, share of portfolio and sortable columns.
+- The toolbar icon is greyed out on every site except myCAMS and KFintech.
+- "Dashboard" opens the full-page view with charts (allocation, source split, invested vs current, gain by fund), gain, share of portfolio and sortable columns.
+- Export from the dashboard: "Copy for Google Sheets" copies a tab-separated table (`Source, Fund Name, Invested Amount, Current Value`, plain numbers) that pastes straight into cells. "Download CSV" saves the same rows as a file.
 
 ## Known limitations
 - Do not click around on the page or switch tabs while a myCAMS sync runs (background tabs throttle timers).

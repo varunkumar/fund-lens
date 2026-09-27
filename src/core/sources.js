@@ -9,3 +9,5 @@ const HOSTS = {
 export function sourceForHost(host) {
   return HOSTS[host] ?? null;
 }
+
+export const SUPPORTED_HOSTS = Object.keys(HOSTS);

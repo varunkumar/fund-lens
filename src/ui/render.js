@@ -41,7 +41,12 @@ export function renderPortfolio(doc, container, view, opts = {}) {
   container.replaceChildren();
 
   if (view.sections.length === 0) {
-    container.append(el(doc, 'p', { className: 'empty', text: `No data yet. Open your myCAMS or KFintech portfolio page and click "Sync this site". Synced data is kept for ${TTL_MS / 60000} min.` }));
+    container.append(el(doc, 'p', { className: 'empty', text: `No data yet. Open your portfolio, then click "Sync this site". Synced data is kept for ${TTL_MS / 60000} min.` }));
+    const links = el(doc, 'p', { className: 'quick-links' });
+    for (const [label, href] of [['Open myCAMS', 'https://newmycams.camsonline.com/'], ['Open KFintech', 'https://mfs.kfintech.com/']]) {
+      links.append(el(doc, 'a', { className: 'link', text: `${label} \u2197`, href, target: '_blank', rel: 'noopener noreferrer' }));
+    }
+    container.append(links);
   }
 
   for (const s of view.sections) {
