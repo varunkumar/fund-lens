@@ -1,0 +1,13 @@
+{
+  "name": "fund-lens",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'test/**/*.js'"
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.13"
+  }
+}
