@@ -1,15 +1,19 @@
 import { createStore } from '../core/store.js';
 import { buildView } from '../core/summary.js';
 import { renderPortfolio } from '../ui/render.js';
+import { createExpiryRefresher } from '../ui/expiry.js';
 
 const store = createStore();
 const root = document.getElementById('root');
 
+const armExpiry = createExpiryRefresher(() => refresh());
 let sort = { key: 'current', dir: 'desc' };
 
 async function refresh() {
   try {
-    renderPortfolio(document, root, buildView(await store.loadAll()), { sort, onSortChange: (s) => { sort = s; } });
+    const view = buildView(await store.loadAll());
+    armExpiry(view);
+    renderPortfolio(document, root, view, { sort, onSortChange: (s) => { sort = s; } });
   } catch {
     root.textContent = 'Could not load data.';
   }

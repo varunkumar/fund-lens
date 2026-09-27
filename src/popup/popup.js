@@ -1,22 +1,28 @@
 import { createStore } from '../core/store.js';
 import { buildView } from '../core/summary.js';
 import { renderPortfolio } from '../ui/render.js';
+import { createExpiryRefresher } from '../ui/expiry.js';
 
 const store = createStore();
 const root = document.getElementById('root');
 const status = document.getElementById('status');
 
+const armExpiry = createExpiryRefresher(() => refresh());
 let sort = { key: 'current', dir: 'desc' };
 
 async function refresh() {
   try {
-    renderPortfolio(document, root, buildView(await store.loadAll()), { compact: true, sort, onSortChange: (s) => { sort = s; } });
+    const view = buildView(await store.loadAll());
+    armExpiry(view);
+    renderPortfolio(document, root, view, { compact: true, sort, onSortChange: (s) => { sort = s; } });
   } catch {
     root.textContent = 'Could not load data.';
   }
 }
 
-document.getElementById('sync').addEventListener('click', async () => {
+const syncBtn = document.getElementById('sync');
+syncBtn.addEventListener('click', async () => {
+  syncBtn.disabled = true;
   status.textContent = 'Syncing...';
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -24,6 +30,8 @@ document.getElementById('sync').addEventListener('click', async () => {
     status.textContent = res?.ok ? `Synced ${res.count} funds${res.partial ? ' (partial)' : ''}.` : (res?.error || 'Sync failed. Reload the page and try again.');
   } catch {
     status.textContent = 'Open your myCAMS or KFintech portfolio page, reload it, then try again.';
+  } finally {
+    syncBtn.disabled = false;
   }
 });
 document.getElementById('dash').addEventListener('click', () => {

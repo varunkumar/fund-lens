@@ -5,7 +5,7 @@ const keyOf = (source) => `portfolio:${source}`;
 
 // area: anything with async get/set/remove (chrome.storage.local in the extension).
 export function createStore(area = globalThis.chrome?.storage?.local, now = () => Date.now()) {
-  const expired = (entry) => now() - entry.syncedAt >= TTL_MS;
+  const expired = (entry) => !Number.isFinite(entry.syncedAt) || now() - entry.syncedAt >= TTL_MS;
 
   async function readAll() {
     const raw = await area.get(SOURCES.map(keyOf));

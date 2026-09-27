@@ -79,3 +79,13 @@ test('clear removes everything', async () => {
   await store.clear();
   assert.deepEqual(area.data, {});
 });
+
+test('an entry without a valid syncedAt is treated as expired and removed', async () => {
+  const area = fakeArea();
+  area.data['portfolio:cams'] = { rows: [], partial: false, failed: [] };
+  const store = createStore(area, () => 1000);
+  assert.deepEqual(await store.loadAll(), {});
+  assert.equal(area.data['portfolio:cams'], undefined);
+  area.data['portfolio:kfintech'] = { rows: [], syncedAt: 'x' };
+  assert.equal(await store.purgeExpired(), 1);
+});

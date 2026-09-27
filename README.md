@@ -15,5 +15,9 @@ Chrome extension (Manifest V3) that combines your myCAMS and KFintech mutual fun
 - On a portfolio page click the extension icon, then "Sync this site". On myCAMS open the dashboard AMC list first; the extension clicks through each AMC tab and restores your selection.
 - "Dashboard" opens the full-page view with gain, share of portfolio and sortable columns.
 
+## Known limitations
+- Do not click around on the page or switch tabs while a myCAMS sync runs (background tabs throttle timers).
+- myCAMS active filters and the "zero balance" toggle are respected as displayed (not automated). A scheme filter or hidden zero-balance funds narrows what is read, and an AMC whose funds are all hidden shows as failed.
+
 ## Develop
 `npm install && npm test`. The scrapers are tested against synthetic HTML fixtures in `test/fixtures/`; if a site changes its layout the adapter reports an error and keeps the previous data.

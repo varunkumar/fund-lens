@@ -49,3 +49,18 @@ test('skips a trailing total row', () => {
     <tr><td>Total</td><td>10</td><td>12</td></tr></table>`;
   assert.equal(scrapeKfintech(parseHTML(html).document).rows.length, 1);
 });
+
+test('a short non-detail row throws instead of being skipped', () => {
+  const html = `<table class="kfin-portfolio-table">
+    <tr><th>Scheme Name</th><th>Cost Value (₹)</th><th>Current Value (₹)</th></tr>
+    <tr><td>X Fund</td><td>10</td></tr></table>`;
+  assert.throws(() => scrapeKfintech(parseHTML(html).document), /unreadable row/i);
+});
+
+test('rows from several portfolio tables are merged in order', () => {
+  const t = (n) => `<table class="kfin-portfolio-table">
+    <tr><th>Scheme Name</th><th>Cost Value (₹)</th><th>Current Value (₹)</th></tr>
+    <tr><td>${n} Fund</td><td>10</td><td>12</td></tr></table>`;
+  const res = scrapeKfintech(parseHTML(t('A') + t('B')).document);
+  assert.deepEqual(res.rows.map((r) => r.fundName), ['A Fund', 'B Fund']);
+});

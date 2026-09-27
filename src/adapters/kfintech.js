@@ -12,10 +12,7 @@ function columnIndex(headers, label) {
   return i;
 }
 
-export function scrapeKfintech(doc) {
-  const table = doc.querySelector('table.kfin-portfolio-table');
-  if (!table) throw new AdapterError('KFintech: portfolio table not found. Open the portfolio page first.');
-
+function scrapeTable(table) {
   const rows = directRows(table);
   const headerRow = rows.find((r) => [...r.children].some((c) => c.tagName === 'TH'));
   if (!headerRow) throw new AdapterError('KFintech: header row not found (layout changed?)');
@@ -23,13 +20,17 @@ export function scrapeKfintech(doc) {
   const nameCol = columnIndex(headers, 'scheme');
   const costCol = columnIndex(headers, 'cost value');
   const currentCol = columnIndex(headers, 'current value');
+  const needed = Math.max(nameCol, costCol, currentCol);
 
   const out = [];
   for (const tr of rows) {
     if (tr === headerRow) continue;
     const cells = directCells(tr);
-    // Detail rows wrap a nested table in one wide cell; real scheme rows have every column.
-    if (cells.length < headers.length && cells.length <= Math.max(nameCol, costCol, currentCol)) continue;
+    if (cells.length <= needed) {
+      // Only detail rows (wrapping a nested table) may be skipped.
+      if (cells.some((c) => c.querySelector('table'))) continue;
+      throw new AdapterError(`KFintech: unreadable row "${clean(tr).slice(0, 60)}" (layout changed?)`);
+    }
     const fundName = clean(cells[nameCol]);
     if (!fundName || /^total\b/i.test(fundName)) continue;
     const invested = parseAmount(clean(cells[costCol]));
@@ -39,7 +40,13 @@ export function scrapeKfintech(doc) {
     }
     out.push({ fundName, invested, current });
   }
+  return out;
+}
 
+export function scrapeKfintech(doc) {
+  const tables = [...doc.querySelectorAll('table.kfin-portfolio-table')];
+  if (tables.length === 0) throw new AdapterError('KFintech: portfolio table not found. Open the portfolio page first.');
+  const out = tables.flatMap(scrapeTable);
   if (out.length === 0) throw new AdapterError('KFintech: no holdings found on the page');
   return { rows: out, partial: false, failed: [] };
 }

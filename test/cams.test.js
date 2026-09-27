@@ -116,3 +116,52 @@ test('the original tab is restored even when a later tab throws', async () => {
   assert.equal(inputs[0].hasAttribute('checked'), true);
   assert.equal(inputs[1].hasAttribute('checked'), false);
 });
+
+test('re-rendered swiper slides (stale nodes) are still all visited', async () => {
+  const doc = loadFixture('cams.html');
+  const amcs = [tile('Alpha Fund', '₹100', '₹110'), tile('Beta Fund', '₹1', '₹2')];
+  const wrapper = doc.querySelector('.scheme_list_wrapper');
+  const container = doc.querySelector('.swiper-wrapper');
+  const log = [];
+  const mount = (active) => {
+    container.innerHTML = ['Alpha AMC', 'Beta AMC']
+      .map((n, i) => `<div class="swiper-slide"><input type="radio" name="amc"${i === active ? ' checked' : ''}><label>${n}</label></div>`)
+      .join('');
+    [...container.querySelectorAll('.swiper-slide')].forEach((s, i) => {
+      s.querySelector('label').addEventListener('click', () => {
+        log.push(i);
+        wrapper.innerHTML = amcs[i];
+        mount(i); // router re-render replaces every slide node
+      });
+    });
+  };
+  mount(0);
+  wrapper.innerHTML = amcs[0];
+  const result = await scrapeCams(doc, { waitSettle: instant });
+  assert.deepEqual(result.rows.map((r) => r.fundName), ['Alpha Fund', 'Beta Fund']);
+  assert.deepEqual(log, [0, 1, 0]);
+  assert.equal(result.partial, false);
+});
+
+test('tiles outside .main_cont are ignored', async () => {
+  const doc = loadFixture('cams.html');
+  wire(doc, [tile('Alpha Fund', '₹100', '₹110'), tile('Beta Fund', '₹1', '₹2')]);
+  doc.body.insertAdjacentHTML('beforeend', tile('Hidden Mobile Fund', '₹5', '₹6'));
+  const result = await scrapeCams(doc, { waitSettle: instant });
+  assert.deepEqual(result.rows.map((r) => r.fundName), ['Alpha Fund', 'Beta Fund']);
+});
+
+test('clicks the input when the label click alone does not select the tab', async () => {
+  const doc = loadFixture('cams.html');
+  const wrapper = doc.querySelector('.scheme_list_wrapper');
+  const amcs = [tile('Alpha Fund', '₹100', '₹110'), tile('Beta Fund', '₹1', '₹2')];
+  doc.querySelectorAll('.swiper-slide input').forEach((inp, i) => {
+    inp.addEventListener('click', () => {
+      doc.querySelectorAll('.swiper-slide input').forEach((x, j) => (j === i ? x.setAttribute('checked', '') : x.removeAttribute('checked')));
+      wrapper.innerHTML = amcs[i];
+    });
+  });
+  wrapper.innerHTML = amcs[0];
+  const result = await scrapeCams(doc, { waitSettle: instant });
+  assert.deepEqual(result.rows.map((r) => r.fundName), ['Alpha Fund', 'Beta Fund']);
+});

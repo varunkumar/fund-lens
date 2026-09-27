@@ -11,8 +11,8 @@ function valueByLabel(tile, wanted) {
   return null;
 }
 
-function scrapeTiles(doc) {
-  return [...doc.querySelectorAll('app-scheme-tile')].map((tile) => {
+function scrapeTiles(root) {
+  return [...root.querySelectorAll('app-scheme-tile')].map((tile) => {
     const fundName = clean(tile.querySelector('.scheme_title .title'));
     const invested = parseAmount(valueByLabel(tile, 'invested') ?? '');
     const current = parseAmount(valueByLabel(tile, 'current') ?? '');
@@ -23,20 +23,33 @@ function scrapeTiles(doc) {
 }
 
 export async function scrapeCams(doc, { waitSettle = defaultWaitSettle } = {}) {
-  const slides = [...doc.querySelectorAll('.swiperAMCwiseListing .swiper-slide')];
-  if (slides.length === 0) throw new AdapterError('myCAMS: AMC tabs not found. Open the dashboard AMC list first.');
+  const count = doc.querySelectorAll('.swiperAMCwiseListing .swiper-slide').length;
+  if (count === 0) throw new AdapterError('myCAMS: AMC tabs not found. Open the dashboard AMC list first.');
 
   const root = doc.querySelector('.main_cont') ?? doc.body;
-  const labelOf = (slide, i) => clean(slide.querySelector('label')) || `AMC #${i + 1}`;
-  const click = (slide) => (slide.querySelector('label') ?? slide.querySelector('input')).click();
-  const originalIndex = Math.max(0, slides.findIndex((s) => s.querySelector('input')?.checked || s.querySelector('input')?.hasAttribute('checked')));
+  // Re-query on every use: the router may re-render the swiper and orphan stored nodes.
+  const slideAt = (i) => doc.querySelectorAll('.swiperAMCwiseListing .swiper-slide')[i];
+  const isChecked = (input) => !!input && (input.checked || input.hasAttribute('checked'));
+  const labelOf = (slide, i) => clean(slide?.querySelector('label')) || `AMC #${i + 1}`;
+  const click = (slide) => {
+    const label = slide.querySelector('label');
+    const input = slide.querySelector('input');
+    (label ?? input).click();
+    if (label && input && !isChecked(input)) input.click();
+  };
+  const originalIndex = Math.max(0, [...doc.querySelectorAll('.swiperAMCwiseListing .swiper-slide')].findIndex((s) => isChecked(s.querySelector('input'))));
 
   const rows = [];
   const failed = [];
   let timedOut = 0;
   let prevSig = null;
   try {
-    for (const [i, slide] of slides.entries()) {
+    for (let i = 0; i < count; i++) {
+      const slide = slideAt(i);
+      if (!slide) {
+        failed.push(`AMC #${i + 1}`);
+        continue;
+      }
       const settling = waitSettle(root); // start observing before the click
       click(slide);
       if ((await settling) === 'timeout') {
@@ -44,7 +57,7 @@ export async function scrapeCams(doc, { waitSettle = defaultWaitSettle } = {}) {
         timedOut++;
         continue;
       }
-      const tiles = scrapeTiles(doc);
+      const tiles = scrapeTiles(root);
       const sig = tiles.map((t) => t.fundName).join('\u0000');
       // Empty, or identical to the previous tab's tiles: the render had not happened yet.
       if (tiles.length === 0 || (prevSig !== null && sig === prevSig)) {
@@ -58,7 +71,8 @@ export async function scrapeCams(doc, { waitSettle = defaultWaitSettle } = {}) {
     // Put the page back on the tab the user had selected, without masking an earlier error.
     try {
       const restoring = waitSettle(root);
-      click(slides[originalIndex]);
+      const original = slideAt(originalIndex);
+      if (original) click(original);
       await restoring;
     } catch {
       /* best effort */

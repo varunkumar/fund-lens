@@ -37,3 +37,29 @@ test('partial CAMS results are saved and flagged', async () => {
   assert.deepEqual(res, { ok: true, source: 'cams', count: 1, partial: true, failed: ['Beta AMC'] });
   assert.equal(store.saved[0][1].partial, true);
 });
+
+import { createSyncGuard } from '../src/content-main.js';
+
+test('sync guard dedupes concurrent calls and re-runs after settle or rejection', async () => {
+  let calls = 0;
+  let release;
+  let fail = false;
+  const fn = () => { calls++; return new Promise((res, rej) => { release = () => (fail ? rej(new Error('x')) : res({ ok: true })); }); };
+  const guarded = createSyncGuard(fn);
+  const first = guarded();
+  const busy = await guarded();
+  assert.equal(busy.ok, false);
+  assert.match(busy.error, /already running/i);
+  assert.equal(calls, 1);
+  release();
+  assert.deepEqual(await first, { ok: true });
+  const second = guarded();
+  fail = true;
+  release();
+  await assert.rejects(second);
+  const third = guarded();
+  assert.equal(calls, 3);
+  fail = false;
+  release();
+  await third;
+});

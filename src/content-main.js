@@ -17,11 +17,25 @@ export async function runSync(doc, host, store, { adapters = DEFAULT_ADAPTERS } 
   }
 }
 
+export function createSyncGuard(fn) {
+  let running = false;
+  return async (...args) => {
+    if (running) return { ok: false, error: 'A sync is already running. Wait for it to finish.' };
+    running = true;
+    try {
+      return await fn(...args);
+    } finally {
+      running = false;
+    }
+  };
+}
+
 export function init() {
   const store = createStore();
+  const guarded = createSyncGuard(() => runSync(document, location.hostname, store));
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg?.type !== 'fund-lens:sync') return false;
-    runSync(document, location.hostname, store).then(sendResponse);
+    guarded().then(sendResponse);
     return true; // async response
   });
 }
