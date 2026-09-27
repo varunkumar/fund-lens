@@ -11,8 +11,16 @@ function valueByLabel(tile, wanted) {
   return null;
 }
 
+// One app-scheme-tile holds one .scheme_box per fund; a tile without boxes counts as a single card.
+function fundCards(root) {
+  return [...root.querySelectorAll('app-scheme-tile')].flatMap((tile) => {
+    const boxes = [...tile.querySelectorAll('.scheme_box')];
+    return boxes.length ? boxes : [tile];
+  });
+}
+
 function scrapeTiles(root) {
-  return [...root.querySelectorAll('app-scheme-tile')].map((tile) => {
+  return fundCards(root).map((tile) => {
     const fundName = clean(tile.querySelector('.scheme_title .title'));
     const invested = parseAmount(valueByLabel(tile, 'invested') ?? '');
     const current = parseAmount(valueByLabel(tile, 'current') ?? '');

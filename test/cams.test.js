@@ -165,3 +165,28 @@ test('clicks the input when the label click alone does not select the tab', asyn
   const result = await scrapeCams(doc, { waitSettle: instant });
   assert.deepEqual(result.rows.map((r) => r.fundName), ['Alpha Fund', 'Beta Fund']);
 });
+
+// Live myCAMS renders ONE app-scheme-tile per AMC that holds one .scheme_box per fund.
+test('every fund card inside a single app-scheme-tile is extracted', async () => {
+  const box = (name, invested, current) => `
+    <div class="rows scheme_box"><div class="scheme_title_card">
+      <div class="scheme_title"><img><span class="title">${name}</span></div>
+      <div class="footer_nav">
+        <div class="price invested"><label>Invested</label><span>${invested}</span></div>
+        <div class="price current"><label>Current</label><span>${current}</span></div>
+        <div class="price current"><label>XIRR</label><div class="returns">12%</div></div>
+      </div>
+    </div></div>`;
+  const doc = loadFixture('cams.html');
+  wire(doc, [
+    `<app-scheme-tile>${box('Alpha Fund One', '₹100', '₹110')}${box('Alpha Fund Two', '₹200', '₹190')}</app-scheme-tile>`,
+    `<app-scheme-tile>${box('Beta Fund One', '₹10', '₹12')}</app-scheme-tile>`,
+  ]);
+  const result = await scrapeCams(doc, { waitSettle: instant });
+  assert.deepEqual(result.rows, [
+    { fundName: 'Alpha Fund One', invested: 100, current: 110 },
+    { fundName: 'Alpha Fund Two', invested: 200, current: 190 },
+    { fundName: 'Beta Fund One', invested: 10, current: 12 },
+  ]);
+  assert.equal(result.partial, false);
+});
