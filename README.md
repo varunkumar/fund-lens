@@ -1,8 +1,17 @@
+<p align="center"><img src="docs/brand/logo.png" alt="FundLens" width="220"></p>
+
 # Fund Lens
 
 One clear view of all your mutual funds. Private, and stored only in your browser.
 
 A Chrome extension (Manifest V3) that combines your myCAMS and KFintech portfolios.
+
+## Screenshots
+| Popup | Dashboard |
+| --- | --- |
+| <img src="docs/screenshots/popup.png" alt="Popup with synced funds" width="360"> | <img src="docs/screenshots/dashboard.png" alt="Dashboard with charts" width="560"> |
+
+More: [full dashboard](docs/screenshots/dashboard-full.png), [dark mode](docs/screenshots/dashboard-dark.png), [empty popup](docs/screenshots/popup-empty.png), [Chrome Web Store frame](docs/screenshots/store-popup.png). All screenshots use dummy data.
 
 ## Privacy
 - Reads only the page you are already logged in to. Never asks for or stores credentials.
@@ -25,4 +34,7 @@ A Chrome extension (Manifest V3) that combines your myCAMS and KFintech portfoli
 - myCAMS active filters and the "zero balance" toggle are respected as displayed (not automated). A scheme filter or hidden zero-balance funds narrows what is read, and an AMC whose funds are all hidden shows as failed.
 
 ## Develop
-`npm install && npm test`. The scrapers are tested against synthetic HTML fixtures in `test/fixtures/`; if a site changes its layout the adapter reports an error and keeps the previous data.
+`npm install && npm test`. See `CLAUDE.md` for the code layout and conventions.
+
+Screenshots (`docs/screenshots/`, dummy data only) are regenerated with `tools/screenshots/capture.sh`. It needs Google Chrome on macOS and `python3`; it loads the real popup and dashboard against a fake `chrome.*` API.
+ The scrapers are tested against synthetic HTML fixtures in `test/fixtures/`; if a site changes its layout the adapter reports an error and keeps the previous data.

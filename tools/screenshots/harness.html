@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Screenshot harness</title>
+<script type="module">
+// Dev-only: loads the real popup/dashboard with a fake chrome.* API and dummy data. Never shipped.
+const q = new URLSearchParams(location.search);
+const page = q.get('page') ?? 'popup';
+const data = q.get('data') ?? 'full';
+const now = Date.now();
+const rows = (list) => list.map(([fundName, invested, current]) => ({ fundName, invested, current }));
+const DUMMY = {
+  kfintech: { syncedAt: now - 4 * 60_000, partial: false, failed: [], rows: rows([
+    ['Sample Bluechip Fund - Direct Growth', 250000, 341200.55],
+    ['Sample Flexi Cap Fund - Direct Growth', 180000, 226480.1],
+    ['Sample Small Cap Fund - Direct Growth', 120000, 189950.75],
+    ['Sample Liquid Fund - Direct Growth', 90000, 96310.4],
+    ['Sample Index Nifty 50 - Direct Growth', 300000, 412870.2],
+  ]) },
+  cams: { syncedAt: now - 9 * 60_000, partial: false, failed: [], rows: rows([
+    ['Demo Balanced Advantage Fund - Direct Growth', 200000, 231400],
+    ['Demo Mid Cap Opportunities - Direct Growth', 150000, 214220.9],
+    ['Demo Corporate Bond Fund - Direct Growth', 100000, 108050.3],
+    ['Demo Tax Saver ELSS - Direct Growth', 60000, 58120.65],
+    ['Demo Global Equity Fund of Fund - Direct Growth', 80000, 71340.2],
+  ]) },
+};
+const store = data === 'empty' ? {} : Object.fromEntries(Object.entries(DUMMY).map(([s, e]) => [`portfolio:${s}`, e]));
+const noop = { addListener() {} };
+globalThis.chrome = {
+  storage: { local: { get: async () => store, set: async () => {}, remove: async () => {} }, onChanged: noop },
+  tabs: { query: async () => [{ id: 1 }], sendMessage: async () => ({ ok: true, count: 10 }), create() {} },
+  runtime: { getURL: (p) => `/${p}` },
+};
+// Pin the colour scheme (theme=light|dark) by inlining the stylesheet with the dark media block removed or unwrapped.
+let css = await (await fetch('/src/ui/styles.css')).text();
+const dark = css.match(/@media \(prefers-color-scheme: dark\) \{([\s\S]*?)\n\}/);
+css = css.replace(dark[0], q.get('theme') === 'dark' ? dark[1] : '');
+const html = (await (await fetch(`/src/${page}/${page}.html`)).text()).replace(/<link rel="stylesheet"[^>]*>/, `<style>${css}</style>`);
+document.open();
+document.write(html.replace('<head>', `<head><base href="/src/${page}/"><link rel="stylesheet" href="/hold.css?${Math.random()}">`));
+document.close();
+if (q.get('scroll')) addEventListener('load', () => setTimeout(() => document.querySelector(q.get('scroll'))?.scrollIntoView(), 300));
+</script>
