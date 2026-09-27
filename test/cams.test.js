@@ -88,3 +88,31 @@ test('throws when nothing was scraped at all', async () => {
   wire(doc, ['', '']);
   await assert.rejects(() => scrapeCams(doc, { waitSettle: instant }), /no holdings/i);
 });
+
+test('a tab whose render never arrives (stale tiles) is failed, not duplicated', async () => {
+  const doc = loadFixture('cams.html');
+  wire(doc, [tile('Alpha Fund', '₹100', '₹110'), tile('Alpha Fund', '₹100', '₹110')]);
+  const result = await scrapeCams(doc, { waitSettle: instant });
+  assert.deepEqual(result.rows.map((r) => r.fundName), ['Alpha Fund']);
+  assert.equal(result.partial, true);
+  assert.deepEqual(result.failed, ['Beta AMC']);
+});
+
+test('a settled tab with zero tiles is reported failed', async () => {
+  const doc = loadFixture('cams.html');
+  wire(doc, [tile('Alpha Fund', '₹100', '₹110'), '']);
+  const result = await scrapeCams(doc, { waitSettle: instant });
+  assert.equal(result.partial, true);
+  assert.deepEqual(result.failed, ['Beta AMC']);
+  assert.equal(result.rows.length, 1);
+});
+
+test('the original tab is restored even when a later tab throws', async () => {
+  const doc = loadFixture('cams.html');
+  const log = wire(doc, [tile('Alpha Fund', '₹100', '₹110'), tile('Bad Fund', 'N/A', '₹5')]);
+  await assert.rejects(() => scrapeCams(doc, { waitSettle: instant }), /amount/i);
+  assert.deepEqual(log, [0, 1, 0]);
+  const inputs = [...doc.querySelectorAll('.swiper-slide input')];
+  assert.equal(inputs[0].hasAttribute('checked'), true);
+  assert.equal(inputs[1].hasAttribute('checked'), false);
+});

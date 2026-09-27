@@ -33,22 +33,39 @@ export async function scrapeCams(doc, { waitSettle = defaultWaitSettle } = {}) {
 
   const rows = [];
   const failed = [];
-  for (const [i, slide] of slides.entries()) {
-    const settling = waitSettle(root); // start observing before the click
-    click(slide);
-    if ((await settling) === 'timeout') {
-      failed.push(labelOf(slide, i));
-      continue;
+  let timedOut = 0;
+  let prevSig = null;
+  try {
+    for (const [i, slide] of slides.entries()) {
+      const settling = waitSettle(root); // start observing before the click
+      click(slide);
+      if ((await settling) === 'timeout') {
+        failed.push(labelOf(slide, i));
+        timedOut++;
+        continue;
+      }
+      const tiles = scrapeTiles(doc);
+      const sig = tiles.map((t) => t.fundName).join('\u0000');
+      // Empty, or identical to the previous tab's tiles: the render had not happened yet.
+      if (tiles.length === 0 || (prevSig !== null && sig === prevSig)) {
+        failed.push(labelOf(slide, i));
+        continue;
+      }
+      prevSig = sig;
+      rows.push(...tiles);
     }
-    rows.push(...scrapeTiles(doc));
+  } finally {
+    // Put the page back on the tab the user had selected, without masking an earlier error.
+    try {
+      const restoring = waitSettle(root);
+      click(slides[originalIndex]);
+      await restoring;
+    } catch {
+      /* best effort */
+    }
   }
 
-  // Put the page back on the tab the user had selected.
-  const restoring = waitSettle(root);
-  click(slides[originalIndex]);
-  await restoring;
-
-  if (rows.length === 0 && failed.length === 0) throw new AdapterError('myCAMS: no holdings found on the page');
+  if (rows.length === 0 && timedOut === 0) throw new AdapterError('myCAMS: no holdings found on the page');
   if (rows.length === 0) throw new AdapterError(`myCAMS: no AMC tab finished loading (${failed.join(', ')})`);
   return { rows, partial: failed.length > 0, failed };
 }
