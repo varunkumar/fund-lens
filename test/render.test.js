@@ -68,3 +68,34 @@ test('compact mode omits Gain and Share columns; empty view shows guidance', () 
   assert.match(root.textContent, /No data yet/);
   assert.match(root.textContent, new RegExp(`${TTL_MS / 60000} min`));
 });
+
+const sortView = () => buildView({
+  cams: entry([{ fundName: 'Alpha', invested: 1, current: 10 }, { fundName: 'Beta', invested: 1, current: 30 }, { fundName: 'Gamma', invested: 1, current: 20 }]),
+});
+const namesOf = (root) => [...root.querySelectorAll('tbody tr td:first-child')].map((td) => td.textContent);
+const header = (root, label) => [...root.querySelectorAll('th')].find((th) => th.textContent === label);
+
+test('numeric header click toggles asc then desc', () => {
+  const { document, root } = setup();
+  renderPortfolio(document, root, sortView(), { now: 0 });
+  header(root, 'Current').click();
+  assert.deepEqual(namesOf(root), ['Alpha', 'Gamma', 'Beta']);
+  header(root, 'Current').click();
+  assert.deepEqual(namesOf(root), ['Beta', 'Gamma', 'Alpha']);
+});
+
+test('onSortChange receives the new sort on header click', () => {
+  const { document, root } = setup();
+  const calls = [];
+  renderPortfolio(document, root, sortView(), { now: 0, onSortChange: (s) => calls.push(s) });
+  header(root, 'Fund').click();
+  assert.deepEqual(calls, [{ key: 'fundName', dir: 'asc' }]);
+});
+
+test('compact mode survives a header-click re-render', () => {
+  const { document, root } = setup();
+  renderPortfolio(document, root, sortView(), { now: 0, compact: true });
+  header(root, 'Fund').click();
+  const labels = [...root.querySelectorAll('th')].map((th) => th.textContent);
+  assert.ok(!labels.includes('Share') && !labels.includes('Gain'));
+});

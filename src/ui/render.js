@@ -33,7 +33,10 @@ const cellText = (col, row) => {
 
 export function renderPortfolio(doc, container, view, opts = {}) {
   const { now = Date.now(), compact = false, sort = { key: 'current', dir: 'desc' } } = opts;
-  const rerender = (next) => renderPortfolio(doc, container, view, { ...opts, sort: next });
+  const rerender = (next) => {
+    opts.onSortChange?.(next);
+    renderPortfolio(doc, container, view, { ...opts, sort: next });
+  };
   const columns = COLUMNS.filter((c) => compact ? !c.full : true);
   container.replaceChildren();
 
