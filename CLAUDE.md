@@ -1,4 +1,4 @@
-# Fund Lens
+# FundLens
 
 Manifest V3 Chrome extension that reads the user's logged-in myCAMS (`newmycams.camsonline.com`) and KFintech (`mfs.kfintech.com`) portfolio pages, normalises them to `Fund Name | Invested Amount | Current Value`, and shows a popup and a dashboard. See `README.md` for behaviour and `docs/superpowers/` (main checkout) for the design spec and plan.
 

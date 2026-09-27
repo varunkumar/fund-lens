@@ -42,7 +42,7 @@ document.getElementById('csv').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([toCsv(lastView)], { type: 'text/csv' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'fund-lens-portfolio.csv';
+  a.download = 'FundLens-portfolio.csv';
   a.click();
   URL.revokeObjectURL(url);
 });

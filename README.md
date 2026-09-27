@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/brand/logo.png" alt="FundLens" width="220"></p>
 
-# Fund Lens
+# FundLens
 
 One clear view of all your mutual funds. Private, and stored only in your browser.
 
@@ -38,3 +38,6 @@ More: [full dashboard](docs/screenshots/dashboard-full.png), [dark mode](docs/sc
 
 Screenshots (`docs/screenshots/`, dummy data only) are regenerated with `tools/screenshots/capture.sh`. It needs Google Chrome on macOS and `python3`; it loads the real popup and dashboard against a fake `chrome.*` API.
  The scrapers are tested against synthetic HTML fixtures in `test/fixtures/`; if a site changes its layout the adapter reports an error and keeps the previous data.
+
+## Author
+Varunkumar Nagarajan ([varunkumar.dev](https://varunkumar.dev))
